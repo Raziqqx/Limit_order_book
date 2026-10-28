@@ -30,3 +30,13 @@
 *.exe
 *.out
 *.app
+
+# Build output
+build/
+build-*/
+compile_commands.json
+
+# Market data (multi-GB; download with scripts/get_data.sh)
+*.itch
+*NASDAQ_ITCH50*
+perf*.data*

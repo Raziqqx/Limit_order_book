@@ -1,0 +1,13 @@
+engine_bench: 20000000 operations, seed 1, order capacity 1048576 (id table 8.4 MB)
+throughput        4.00 M ops/s  (249.7 ns/op incl. timing overhead)
+trades            3419010  volume 8712195900  cancels that hit 6217617
+resting at end    47328 orders, 99 bid levels, 136 ask levels
+
+latency (ns)        count      p50     p90     p99   p99.9  p99.99      max
+  all          20000000     66.4   254.0   485.2   787.7 31780.7 1723361.1
+  limit         9199379    118.4   231.2   362.4   633.6 27397.2 1151044.7
+  cancel        8001623     37.5   219.7   428.1   656.4 34703.1 1407771.3
+  modify        1599957    208.3   450.9   702.1  1198.6 35433.7 1723361.1
+  ioc            799778    121.3   242.6   371.0   645.0 27397.2 1490096.3
+  market         399263    172.7   356.7   610.7  1153.0 33972.5 171875.9
+invariants OK

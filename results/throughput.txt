@@ -1,0 +1,292 @@
+prefaulted 19.1 s
+[03:36:00] 241728 msgs, 0 live orders
+    AAPL   bid     0.0000 x 0       ask     0.0000 x 0      
+    MSFT   bid     0.0000 x 0       ask     0.0000 x 0      
+    AMZN   bid     0.0000 x 0       ask     0.0000 x 0      
+    TSLA   bid     0.0000 x 0       ask     0.0000 x 0      
+    SPY    bid     0.0000 x 0       ask     0.0000 x 0      
+    QQQ    bid     0.0000 x 0       ask     0.0000 x 0      
+[04:00:00] 241732 msgs, 0 live orders
+    AAPL   bid     0.0000 x 0       ask     0.0000 x 0      
+    MSFT   bid     0.0000 x 0       ask     0.0000 x 0      
+    AMZN   bid     0.0000 x 0       ask     0.0000 x 0      
+    TSLA   bid     0.0000 x 0       ask     0.0000 x 0      
+    SPY    bid     0.0000 x 0       ask     0.0000 x 0      
+    QQQ    bid     0.0000 x 0       ask     0.0000 x 0      
+[04:30:00] 703080 msgs, 5318 live orders
+    AAPL   bid   290.0600 x 1       ask   290.2400 x 30     
+    MSFT   bid   159.1300 x 10      ask   160.9900 x 100    
+    AMZN   bid  1870.5000 x 82      ask  1872.5500 x 300    
+    TSLA   bid   432.5500 x 100     ask   433.9900 x 51     
+    SPY    bid   323.0200 x 1200    ask   323.0800 x 1400   
+    QQQ    bid   213.7400 x 900     ask   213.7600 x 900    
+[05:00:00] 1090703 msgs, 5738 live orders
+    AAPL   bid   289.7400 x 1       ask   289.9000 x 3000   
+    MSFT   bid   158.9600 x 110     ask   159.0200 x 400    
+    AMZN   bid  1863.0000 x 48      ask  1865.0000 x 925    
+    TSLA   bid   431.5000 x 3       ask   431.8700 x 20     
+    SPY    bid   322.9100 x 100     ask   322.9600 x 1200   
+    QQQ    bid   213.6200 x 600     ask   213.6500 x 900    
+[05:30:00] 1430285 msgs, 6042 live orders
+    AAPL   bid   289.1000 x 130     ask   289.5000 x 28     
+    MSFT   bid   158.8800 x 200     ask   159.0000 x 250    
+    AMZN   bid  1863.1000 x 15      ask  1864.9800 x 2      
+    TSLA   bid   431.1000 x 10      ask   431.5000 x 50     
+    SPY    bid   322.8400 x 1800    ask   322.9100 x 1200   
+    QQQ    bid   213.5300 x 1700    ask   213.5600 x 900    
+[06:00:00] 1824734 msgs, 6203 live orders
+    AAPL   bid   289.4200 x 2       ask   289.7000 x 430    
+    MSFT   bid   158.8800 x 100     ask   159.0000 x 250    
+    AMZN   bid  1865.2700 x 387     ask  1867.1400 x 20     
+    TSLA   bid   431.4100 x 15      ask   431.7600 x 78     
+    SPY    bid   322.7000 x 100     ask   322.7400 x 1200   
+    QQQ    bid   213.4300 x 900     ask   213.4600 x 900    
+[06:30:00] 2200247 msgs, 6971 live orders
+    AAPL   bid   289.0400 x 30      ask   289.4000 x 100    
+    MSFT   bid   158.7100 x 32      ask   158.9400 x 34     
+    AMZN   bid  1862.6500 x 40      ask  1864.6200 x 12     
+    TSLA   bid   429.5000 x 5       ask   430.0000 x 500    
+    SPY    bid   322.5000 x 500     ask   322.5700 x 1200   
+    QQQ    bid   213.3000 x 900     ask   213.3300 x 900    
+[07:00:00] 2524145 msgs, 7574 live orders
+    AAPL   bid   289.4000 x 100     ask   289.6600 x 130    
+    MSFT   bid   157.0100 x 100     ask   158.9400 x 134    
+    AMZN   bid  1862.6500 x 40      ask  1865.9100 x 14     
+    TSLA   bid   429.8300 x 13      ask   430.9900 x 27     
+    SPY    bid   322.6700 x 500     ask   322.7400 x 1700   
+    QQQ    bid   213.4400 x 900     ask   213.4700 x 900    
+[07:30:00] 2868535 msgs, 10559 live orders
+    AAPL   bid   289.3600 x 30      ask   289.8000 x 90     
+    MSFT   bid   157.4100 x 100     ask   159.0000 x 180    
+    AMZN   bid  1868.2100 x 50      ask  1869.8500 x 95     
+    TSLA   bid   430.5000 x 75      ask   431.2000 x 1      
+    SPY    bid   322.7700 x 500     ask   322.8400 x 1700   
+    QQQ    bid   213.5100 x 1700    ask   213.5400 x 900    
+[08:00:00] 3177297 msgs, 14321 live orders
+    AAPL   bid   289.6400 x 100     ask   289.7300 x 100    
+    MSFT   bid   158.5300 x 100     ask   158.8900 x 200    
+    AMZN   bid  1870.1500 x 31      ask  1872.0000 x 298    
+    TSLA   bid   429.4300 x 7       ask   429.7900 x 10     
+    SPY    bid   322.7300 x 200     ask   322.7600 x 1200   
+    QQQ    bid   213.5000 x 100     ask   213.5100 x 3400   
+[08:30:00] 3671260 msgs, 28300 live orders
+    AAPL   bid   289.7500 x 100     ask   289.8400 x 100    
+    MSFT   bid   158.7200 x 98      ask   158.8400 x 99     
+    AMZN   bid  1873.1300 x 20      ask  1874.0000 x 200    
+    TSLA   bid   430.7900 x 57      ask   430.8000 x 20     
+    SPY    bid   322.8400 x 200     ask   322.8500 x 1900   
+    QQQ    bid   213.5100 x 2900    ask   213.5400 x 1300   
+[09:00:00] 4205202 msgs, 78554 live orders
+    AAPL   bid   289.7300 x 276     ask   289.8300 x 100    
+    MSFT   bid   158.8100 x 5       ask   158.8900 x 10     
+    AMZN   bid  1875.0000 x 3       ask  1875.9500 x 5      
+    TSLA   bid   431.7500 x 140     ask   431.8600 x 10     
+    SPY    bid   323.0000 x 800     ask   323.0200 x 490    
+    QQQ    bid   213.6100 x 2500    ask   213.6300 x 9100   
+[09:30:00] 6696719 msgs, 414434 live orders
+    AAPL   bid   289.5300 x 686     ask   289.7400 x 200    
+    MSFT   bid   158.8200 x 3       ask   158.8300 x 562    
+    AMZN   bid  1872.0000 x 100     ask  1874.0000 x 900    
+    TSLA   bid   428.5000 x 222     ask   429.1000 x 4      
+    SPY    bid   322.9500 x 1500    ask   322.9800 x 1000   
+    QQQ    bid   213.5100 x 2100    ask   213.5300 x 2200   
+[10:00:00] 39513963 msgs, 1663112 live orders
+    AAPL   bid   286.8300 x 100     ask   286.8600 x 1      
+    MSFT   bid   157.1600 x 300     ask   157.1800 x 100    
+    AMZN   bid  1853.0100 x 100     ask  1854.0000 x 1      
+    TSLA   bid   414.2800 x 100     ask   414.4600 x 5      
+    SPY    bid   321.4600 x 400     ask   321.4800 x 1700   
+    QQQ    bid   211.7200 x 600     ask   211.7400 x 2600   
+    two-sided books checked: 8880, crossed or locked: 0
+[10:30:00] 70442358 msgs, 1722657 live orders
+    AAPL   bid   286.3700 x 200     ask   286.4000 x 11832  
+    MSFT   bid   157.1100 x 200     ask   157.1200 x 220    
+    AMZN   bid  1852.5400 x 305     ask  1853.8400 x 5      
+    TSLA   bid   413.7000 x 100     ask   413.8700 x 50     
+    SPY    bid   320.9000 x 500     ask   320.9100 x 200    
+    QQQ    bid   211.6700 x 530     ask   211.6800 x 500    
+    two-sided books checked: 8883, crossed or locked: 0
+[11:00:00] 94229269 msgs, 1756394 live orders
+    AAPL   bid   287.6000 x 112     ask   287.6300 x 220    
+    MSFT   bid   157.6100 x 628     ask   157.6200 x 100    
+    AMZN   bid  1853.0000 x 65      ask  1853.7800 x 4      
+    TSLA   bid   412.9700 x 1       ask   413.0400 x 23     
+    SPY    bid   321.2100 x 800     ask   321.2200 x 600    
+    QQQ    bid   211.9000 x 5432    ask   211.9100 x 600    
+    two-sided books checked: 8885, crossed or locked: 0
+[11:30:00] 116023148 msgs, 1764145 live orders
+    AAPL   bid   289.2400 x 200     ask   289.2700 x 500    
+    MSFT   bid   157.7600 x 70      ask   157.7700 x 400    
+    AMZN   bid  1850.8800 x 2       ask  1851.4000 x 8      
+    TSLA   bid   414.6300 x 101     ask   414.8000 x 100    
+    SPY    bid   321.4000 x 1400    ask   321.4100 x 63     
+    QQQ    bid   212.1700 x 900     ask   212.1800 x 2400   
+    two-sided books checked: 8885, crossed or locked: 0
+[12:00:00] 134508460 msgs, 1771377 live orders
+    AAPL   bid   290.4500 x 200     ask   290.4900 x 100    
+    MSFT   bid   157.7400 x 125     ask   157.7500 x 1221   
+    AMZN   bid  1843.3400 x 100     ask  1843.8500 x 100    
+    TSLA   bid   419.1800 x 107     ask   419.3700 x 50     
+    SPY    bid   321.4600 x 875     ask   321.4700 x 1173   
+    QQQ    bid   212.2600 x 5900    ask   212.2700 x 300    
+    two-sided books checked: 8886, crossed or locked: 0
+[12:30:00] 150023506 msgs, 1786332 live orders
+    AAPL   bid   291.1100 x 72      ask   291.1400 x 206    
+    MSFT   bid   157.8400 x 695     ask   157.8600 x 800    
+    AMZN   bid  1851.2700 x 300     ask  1851.8400 x 100    
+    TSLA   bid   418.7500 x 250     ask   418.9900 x 118    
+    SPY    bid   321.8700 x 1000    ask   321.8800 x 283    
+    QQQ    bid   212.5300 x 4700    ask   212.5500 x 5805   
+    two-sided books checked: 8886, crossed or locked: 0
+[13:00:00] 164067379 msgs, 1789421 live orders
+    AAPL   bid   291.4800 x 300     ask   291.5000 x 100    
+    MSFT   bid   158.0100 x 350     ask   158.0200 x 700    
+    AMZN   bid  1854.1800 x 200     ask  1854.6700 x 4      
+    TSLA   bid   418.6500 x 1       ask   418.7500 x 5      
+    SPY    bid   321.8300 x 105     ask   321.8400 x 801    
+    QQQ    bid   212.6200 x 3700    ask   212.6300 x 600    
+    two-sided books checked: 8885, crossed or locked: 0
+[13:30:00] 178413693 msgs, 1790636 live orders
+    AAPL   bid   291.6000 x 300     ask   291.6400 x 100    
+    MSFT   bid   157.9000 x 1730    ask   157.9200 x 700    
+    AMZN   bid  1850.1000 x 106     ask  1850.6700 x 5      
+    TSLA   bid   419.1000 x 9       ask   419.2000 x 100    
+    SPY    bid   321.5900 x 855     ask   321.6000 x 800    
+    QQQ    bid   212.4600 x 300     ask   212.4700 x 3100   
+    two-sided books checked: 8886, crossed or locked: 0
+[14:00:00] 191693174 msgs, 1788019 live orders
+    AAPL   bid   292.5700 x 69      ask   292.6100 x 200    
+    MSFT   bid   158.0600 x 589     ask   158.0700 x 720    
+    AMZN   bid  1849.1200 x 5       ask  1849.2800 x 100    
+    TSLA   bid   416.4000 x 3       ask   416.5700 x 3      
+    SPY    bid   321.7300 x 1136    ask   321.7400 x 1137   
+    QQQ    bid   212.6000 x 1900    ask   212.6100 x 305    
+    two-sided books checked: 8886, crossed or locked: 0
+[14:30:00] 206020190 msgs, 1788519 live orders
+    AAPL   bid   291.6800 x 6       ask   291.7100 x 100    
+    MSFT   bid   158.0600 x 420     ask   158.0700 x 500    
+    AMZN   bid  1845.1700 x 5       ask  1845.7700 x 5      
+    TSLA   bid   415.0700 x 29      ask   415.2000 x 100    
+    SPY    bid   321.2700 x 500     ask   321.2800 x 1800   
+    QQQ    bid   212.2600 x 500     ask   212.2700 x 2600   
+    two-sided books checked: 8886, crossed or locked: 0
+[15:00:00] 219952342 msgs, 1789757 live orders
+    AAPL   bid   291.2900 x 206     ask   291.3100 x 100    
+    MSFT   bid   157.9100 x 601     ask   157.9200 x 400    
+    AMZN   bid  1847.7600 x 106     ask  1848.2800 x 100    
+    TSLA   bid   414.8900 x 100     ask   415.0000 x 227    
+    SPY    bid   321.1500 x 400     ask   321.1600 x 1895   
+    QQQ    bid   212.1800 x 300     ask   212.1900 x 2300   
+    two-sided books checked: 8885, crossed or locked: 0
+[15:30:00] 235718761 msgs, 1833312 live orders
+    AAPL   bid   292.2500 x 100     ask   292.2800 x 100    
+    MSFT   bid   157.9000 x 947     ask   157.9100 x 699    
+    AMZN   bid  1847.5500 x 16      ask  1847.8500 x 105    
+    TSLA   bid   414.0100 x 234     ask   414.1800 x 18     
+    SPY    bid   321.3600 x 822     ask   321.3700 x 654    
+    QQQ    bid   212.3600 x 4000    ask   212.3800 x 5800   
+    two-sided books checked: 8885, crossed or locked: 0
+[16:00:00] 265920781 msgs, 1758807 live orders
+    AAPL   bid   291.6300 x 7188    ask   291.7300 x 200    
+    MSFT   bid   157.6400 x 7860    ask   157.6800 x 1362   
+    AMZN   bid  1847.1800 x 56      ask  1847.1900 x 896    
+    TSLA   bid   414.6200 x 100     ask   414.6800 x 636    
+    SPY    bid   321.0800 x 1100    ask   321.1100 x 3800   
+    QQQ    bid   212.1500 x 3800    ask   212.1600 x 200    
+    two-sided books checked: 8886, crossed or locked: 0
+[16:30:00] 268121819 msgs, 150680 live orders
+    AAPL   bid   291.4500 x 203     ask   291.5000 x 200    
+    MSFT   bid   157.4000 x 51      ask   157.6300 x 6      
+    AMZN   bid  1846.0000 x 2       ask  1846.5000 x 100    
+    TSLA   bid   413.5100 x 10      ask   414.1500 x 1      
+    SPY    bid   321.0400 x 12500   ask   321.1500 x 93     
+    QQQ    bid   212.1800 x 4       ask   212.2400 x 800    
+[17:00:00] 268319425 msgs, 150356 live orders
+    AAPL   bid   291.3500 x 14      ask   291.4200 x 500    
+    MSFT   bid   157.5300 x 239     ask   157.6300 x 6      
+    AMZN   bid  1846.0000 x 2       ask  1846.5000 x 100    
+    TSLA   bid   413.0000 x 229     ask   413.4700 x 100    
+    SPY    bid   321.1500 x 1000    ask   321.1900 x 1000   
+    QQQ    bid   212.1700 x 1200    ask   212.1900 x 1200   
+[17:30:00] 268388056 msgs, 147903 live orders
+    AAPL   bid   291.2800 x 50      ask   291.5000 x 200    
+    MSFT   bid   157.5000 x 100     ask   157.5900 x 3      
+    AMZN   bid  1845.6600 x 6       ask  1846.4900 x 100    
+    TSLA   bid   413.3100 x 25      ask   413.4000 x 35     
+    SPY    bid   321.1200 x 1296    ask   321.1900 x 200    
+    QQQ    bid   212.1500 x 5       ask   212.2600 x 2000   
+[18:00:00] 268397172 msgs, 147778 live orders
+    AAPL   bid   291.2800 x 50      ask   291.5000 x 200    
+    MSFT   bid   157.5000 x 100     ask   157.5900 x 3      
+    AMZN   bid  1845.6600 x 1       ask  1846.4900 x 100    
+    TSLA   bid   413.1300 x 21      ask   413.9000 x 5      
+    SPY    bid   320.9400 x 1100    ask   321.3500 x 100    
+    QQQ    bid   212.1900 x 700     ask   212.2700 x 700    
+[18:30:00] 268554934 msgs, 55104 live orders
+    AAPL   bid   291.4100 x 2       ask   291.5200 x 10     
+    MSFT   bid   157.4800 x 308     ask   157.7700 x 200    
+    AMZN   bid  1845.0000 x 3       ask  1846.0000 x 10     
+    TSLA   bid   412.9200 x 25      ask   413.2000 x 3      
+    SPY    bid   321.2200 x 1700    ask   321.2500 x 9      
+    QQQ    bid   212.2200 x 10      ask   212.2400 x 900    
+[19:00:00] 268604624 msgs, 54588 live orders
+    AAPL   bid   291.4100 x 2       ask   291.5200 x 10     
+    MSFT   bid   157.6000 x 3       ask   157.7700 x 200    
+    AMZN   bid  1845.9500 x 14      ask  1846.5000 x 100    
+    TSLA   bid   412.6000 x 327     ask   413.6000 x 5      
+    SPY    bid   321.2600 x 500     ask   321.3100 x 500    
+    QQQ    bid   212.2300 x 900     ask   212.2600 x 900    
+[19:30:00] 268654901 msgs, 54437 live orders
+    AAPL   bid   291.4500 x 500     ask   291.7700 x 500    
+    MSFT   bid   157.4800 x 308     ask   157.6300 x 313    
+    AMZN   bid  1845.9500 x 14      ask  1846.1000 x 38     
+    TSLA   bid   412.6500 x 199     ask   412.8100 x 201    
+    SPY    bid   321.2700 x 1200    ask   321.3000 x 88     
+    QQQ    bid   212.2500 x 900     ask   212.2800 x 900    
+[20:00:00] 268693578 msgs, 51200 live orders
+    AAPL   bid   291.5600 x 500     ask   291.7000 x 400    
+    MSFT   bid   157.4800 x 308     ask   157.8200 x 10     
+    AMZN   bid  1845.0000 x 103     ask  1846.5000 x 10     
+    TSLA   bid   412.2900 x 2       ask   414.2500 x 97     
+    SPY    bid   321.2500 x 100     ask   323.9000 x 3      
+    QQQ    bid   212.2000 x 300     ask   212.3600 x 200    
+[20:05:00] FINAL 268744780 msgs, 0 live orders
+    AAPL   bid     0.0000 x 0       ask     0.0000 x 0      
+    MSFT   bid     0.0000 x 0       ask     0.0000 x 0      
+    AMZN   bid     0.0000 x 0       ask     0.0000 x 0      
+    TSLA   bid     0.0000 x 0       ask     0.0000 x 0      
+    SPY    bid     0.0000 x 0       ask     0.0000 x 0      
+    QQQ    bid     0.0000 x 0       ask     0.0000 x 0      
+
+================ ITCH replay report ================
+input bytes            8251407909 (8.25 GB)
+messages               268744780
+message mix            A:117145568 C:99917 D:114360997 E:5722824 F:1485888 H:8966 I:4024315 J:34 K:3 L:215161 P:1218602 Q:17836 R:8906 S:6 U:21639067 V:1 X:2787676 Y:9013
+books (instruments)    8906
+peak live orders       1924078  (pool capacity 16777216)
+peak price levels      784060  (pool capacity 4194304)
+live orders at end     0
+overflow levels created 229512  (vector grows after startup: 93)
+window recenters       1117
+window                 16384 slots/side, arena 2215.6 MB virtual
+
+-- throughput (book processing only; excludes file I/O and checkpoint printing) --
+processing time        39.998 s
+messages / second      6.72 M
+mean ns / message      148.8
+file read time         16.592 s   wall total 56.794 s
+
+-- correctness --
+  bad/unknown messages                                        0
+  adds rejected (dup id / pool full)                          0
+  unknown order refs (E/C/X/D/U)                              0
+  over-execution / over-cancel                                0
+  locate mismatches                                           0
+  books dropped (max_books)                                   0
+  executions in continuous trading                      5683178
+    ...not at the top of book                                 0
+    ...fraction at the top of book                    100.0000%
+  crossed/locked two-sided books at checkpoints               0
+    (two-sided book observations)                        115504
+
+RESULT: PASS

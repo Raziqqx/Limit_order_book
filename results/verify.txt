@@ -1,0 +1,123 @@
+[03:36:00] 241728 msgs, 0 live orders
+  verify: 8906 books, 0 levels compared, 0 depth mismatches, 0 invariant failures
+[04:00:00] 241732 msgs, 0 live orders
+  verify: 8906 books, 0 levels compared, 0 depth mismatches, 0 invariant failures
+[04:30:00] 703080 msgs, 5318 live orders
+  verify: 8906 books, 3588 levels compared, 0 depth mismatches, 0 invariant failures
+[05:00:00] 1090703 msgs, 5738 live orders
+  verify: 8906 books, 3935 levels compared, 0 depth mismatches, 0 invariant failures
+[05:30:00] 1430285 msgs, 6042 live orders
+  verify: 8906 books, 4150 levels compared, 0 depth mismatches, 0 invariant failures
+[06:00:00] 1824734 msgs, 6203 live orders
+  verify: 8906 books, 4330 levels compared, 0 depth mismatches, 0 invariant failures
+[06:30:00] 2200247 msgs, 6971 live orders
+  verify: 8906 books, 4957 levels compared, 0 depth mismatches, 0 invariant failures
+[07:00:00] 2524145 msgs, 7574 live orders
+  verify: 8906 books, 5435 levels compared, 0 depth mismatches, 0 invariant failures
+[07:30:00] 2868535 msgs, 10559 live orders
+  verify: 8906 books, 8184 levels compared, 0 depth mismatches, 0 invariant failures
+[08:00:00] 3177297 msgs, 14321 live orders
+  verify: 8906 books, 11663 levels compared, 0 depth mismatches, 0 invariant failures
+[08:30:00] 3671260 msgs, 28300 live orders
+  verify: 8906 books, 24084 levels compared, 0 depth mismatches, 0 invariant failures
+[09:00:00] 4205202 msgs, 78554 live orders
+  verify: 8906 books, 56911 levels compared, 0 depth mismatches, 0 invariant failures
+[09:30:00] 6696719 msgs, 414434 live orders
+  verify: 8906 books, 255863 levels compared, 0 depth mismatches, 0 invariant failures
+[10:00:00] 39513963 msgs, 1663112 live orders
+    two-sided books checked: 8880, crossed or locked: 0
+  verify: 8906 books, 714068 levels compared, 0 depth mismatches, 0 invariant failures
+[10:30:00] 70442358 msgs, 1722657 live orders
+    two-sided books checked: 8883, crossed or locked: 0
+  verify: 8906 books, 732921 levels compared, 0 depth mismatches, 0 invariant failures
+[11:00:00] 94229269 msgs, 1756394 live orders
+    two-sided books checked: 8885, crossed or locked: 0
+  verify: 8906 books, 745484 levels compared, 0 depth mismatches, 0 invariant failures
+[11:30:00] 116023148 msgs, 1764145 live orders
+    two-sided books checked: 8885, crossed or locked: 0
+  verify: 8906 books, 748085 levels compared, 0 depth mismatches, 0 invariant failures
+[12:00:00] 134508460 msgs, 1771377 live orders
+    two-sided books checked: 8886, crossed or locked: 0
+  verify: 8906 books, 749671 levels compared, 0 depth mismatches, 0 invariant failures
+[12:30:00] 150023506 msgs, 1786332 live orders
+    two-sided books checked: 8886, crossed or locked: 0
+  verify: 8906 books, 755799 levels compared, 0 depth mismatches, 0 invariant failures
+[13:00:00] 164067379 msgs, 1789421 live orders
+    two-sided books checked: 8885, crossed or locked: 0
+  verify: 8906 books, 756278 levels compared, 0 depth mismatches, 0 invariant failures
+[13:30:00] 178413693 msgs, 1790636 live orders
+    two-sided books checked: 8886, crossed or locked: 0
+  verify: 8906 books, 756190 levels compared, 0 depth mismatches, 0 invariant failures
+[14:00:00] 191693174 msgs, 1788019 live orders
+    two-sided books checked: 8886, crossed or locked: 0
+  verify: 8906 books, 753173 levels compared, 0 depth mismatches, 0 invariant failures
+[14:30:00] 206020190 msgs, 1788519 live orders
+    two-sided books checked: 8886, crossed or locked: 0
+  verify: 8906 books, 753327 levels compared, 0 depth mismatches, 0 invariant failures
+[15:00:00] 219952342 msgs, 1789757 live orders
+    two-sided books checked: 8885, crossed or locked: 0
+  verify: 8906 books, 753416 levels compared, 0 depth mismatches, 0 invariant failures
+[15:30:00] 235718761 msgs, 1833312 live orders
+    two-sided books checked: 8885, crossed or locked: 0
+  verify: 8906 books, 763907 levels compared, 0 depth mismatches, 0 invariant failures
+[16:00:00] 265920781 msgs, 1758807 live orders
+    two-sided books checked: 8886, crossed or locked: 0
+  verify: 8906 books, 724322 levels compared, 0 depth mismatches, 0 invariant failures
+[16:30:00] 268121819 msgs, 150680 live orders
+  verify: 8906 books, 94747 levels compared, 0 depth mismatches, 0 invariant failures
+[17:00:00] 268319425 msgs, 150356 live orders
+  verify: 8906 books, 94827 levels compared, 0 depth mismatches, 0 invariant failures
+[17:30:00] 268388056 msgs, 147903 live orders
+  verify: 8906 books, 92903 levels compared, 0 depth mismatches, 0 invariant failures
+[18:00:00] 268397172 msgs, 147778 live orders
+  verify: 8906 books, 92874 levels compared, 0 depth mismatches, 0 invariant failures
+[18:30:00] 268554934 msgs, 55104 live orders
+  verify: 8906 books, 42334 levels compared, 0 depth mismatches, 0 invariant failures
+[19:00:00] 268604624 msgs, 54588 live orders
+  verify: 8906 books, 41991 levels compared, 0 depth mismatches, 0 invariant failures
+[19:30:00] 268654901 msgs, 54437 live orders
+  verify: 8906 books, 41955 levels compared, 0 depth mismatches, 0 invariant failures
+[20:00:00] 268693578 msgs, 51200 live orders
+  verify: 8906 books, 39358 levels compared, 0 depth mismatches, 0 invariant failures
+[20:05:00] FINAL 268744780 msgs, 0 live orders
+  verify: 8906 books, 0 levels compared, 0 depth mismatches, 0 invariant failures
+
+================ ITCH replay report ================
+input bytes            8251407909 (8.25 GB)
+messages               268744780
+message mix            A:117145568 C:99917 D:114360997 E:5722824 F:1485888 H:8966 I:4024315 J:34 K:3 L:215161 P:1218602 Q:17836 R:8906 S:6 U:21639067 V:1 X:2787676 Y:9013
+books (instruments)    8906
+peak live orders       1924078  (pool capacity 16777216)
+peak price levels      784060  (pool capacity 4194304)
+live orders at end     0
+overflow levels created 229512  (vector grows after startup: 93)
+window recenters       1117
+window                 16384 slots/side, arena 2215.6 MB virtual
+
+-- throughput (book processing only; excludes file I/O and checkpoint printing) --
+processing time        256.806 s
+messages / second      1.05 M
+mean ns / message      955.6
+file read time         41.697 s   wall total 323.899 s
+(note: --verify also runs the reference book, so throughput above is meaningless)
+
+-- correctness --
+  bad/unknown messages                                        0
+  adds rejected (dup id / pool full)                          0
+  unknown order refs (E/C/X/D/U)                              0
+  over-execution / over-cancel                                0
+  locate mismatches                                           0
+  books dropped (max_books)                                   0
+  executions in continuous trading                      5683178
+    ...not at the top of book                                 0
+    ...fraction at the top of book                    100.0000%
+  crossed/locked two-sided books at checkpoints               0
+    (two-sided book observations)                        115504
+  top-of-book comparisons vs reference                263241937
+    ...mismatches                                             0
+  full-depth book comparisons                            311710
+    ...mismatches                                             0
+  invariant check failures                                    0
+  reference live orders at end                                0 (fast: 0)
+
+RESULT: PASS

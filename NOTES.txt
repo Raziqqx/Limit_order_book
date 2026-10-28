@@ -1,0 +1,646 @@
+===============================================================================
+ LIMIT ORDER BOOK + MATCHING ENGINE + ITCH 5.0 REPLAY
+ Everything you must know: what was built, why every decision was made, how it
+ was verified, what can go wrong, and how to talk about it in an interview.
+===============================================================================
+
+CONTENTS
+  0. The 60-second pitch
+  1. Repository map
+  2. How to build, test, and run
+  3. Background: order books, matching, and market data
+  4. The ITCH 5.0 protocol (what you need, and its traps)
+  5. Design decisions, one by one, with the reason behind each
+  6. How correctness was proven
+  7. Results, and how to read them
+  8. Measuring performance without fooling yourself
+  9. Project snags a student will hit (and how this repo handles them)
+ 10. Interview questions with crisp answers
+ 11. Extensions if you want to go further
+ 12. Glossary
+
+
+-------------------------------------------------------------------------------
+0. THE 60-SECOND PITCH
+-------------------------------------------------------------------------------
+"I built a limit order book and matching engine in C++17 with price-time
+priority, supporting limit (GTC), market and IOC orders plus cancel and modify.
+Cancel is O(1) by order ID: orders live in a preallocated pool, are linked into
+an intrusive doubly linked FIFO per price level, and are found through an
+open-addressing hash table that stores only 4-byte pool handles. Nothing is
+heap-allocated on the hot path. Price levels sit in a flat array indexed by tick
+offset from a reference price, with a two-level bitmap to find the next best
+level in a few instructions, plus a tiny overflow for far-away prices and
+automatic re-centering when the market drifts.
+
+I fed it a full trading day of real NASDAQ TotalView-ITCH 5.0 data (hundreds of
+millions of messages, ~8,900 instruments). The rebuilt books match an
+independent reference implementation after every single message, a separate
+Python implementation agrees at every checkpoint, and every execution during
+continuous trading hits the top of my book, which is a check against NASDAQ's
+own matching. It processes about 6.7 million messages per second on one
+core, with a median per-message latency of about 56 ns."
+
+These numbers come from section 7 / results/. Re-measure on your own machine
+before quoting them: they depend on the hardware.
+
+
+-------------------------------------------------------------------------------
+1. REPOSITORY MAP
+-------------------------------------------------------------------------------
+include/lob/common.hpp        Core types: Order (32 bytes), PriceLevel (24 bytes),
+                              Side, OrderType, TimeInForce, Trade, TopOfBook.
+include/lob/arena.hpp         mmap-backed preallocated memory (lazy commit,
+                              optional prefault, transparent huge pages).
+include/lob/pool.hpp          Fixed-capacity object pool, 32-bit handles,
+                              LIFO free list. Replaces new/delete.
+include/lob/order_id_map.hpp  OrderId -> handle hash table (open addressing,
+                              linear probing, backward-shift deletion).
+include/lob/bitset.hpp        Two-level bitmap: "next non-empty price level".
+include/lob/order_book.hpp    TickRule, OrderStore, LadderArena, OrderBook (the
+                              book + matching engine + invariant checker).
+include/lob/latency.hpp       rdtsc timer, TSC calibration, log-linear histogram.
+include/itch/itch.hpp         Zero-copy ITCH 5.0 decoder, compile-time dispatch.
+include/itch/book_builder.hpp Applies ITCH events to all books; consistency
+                              counters; software prefetch helpers.
+src/replay.cpp                itch_replay: the full-day tool (throughput,
+                              latency, checkpoints, --verify reference book).
+src/bench_engine.cpp          engine_bench: synthetic order flow through the
+                              matching engine (limit/cancel/modify/IOC/market).
+tests/test_main.cpp           Unit tests + randomized differential tests vs a
+                              naive std::map/std::list engine + ITCH tests.
+tools/itch_tob.py             Independent Python ITCH parser for one symbol.
+scripts/get_data.sh           Download + decompress a NASDAQ sample day.
+scripts/run_full_day.sh       Build, test, and run every measurement.
+results/                      Output of the full-day run (numbers in README).
+
+
+-------------------------------------------------------------------------------
+2. HOW TO BUILD, TEST, AND RUN
+-------------------------------------------------------------------------------
+Requirements: Linux (WSL2 works), g++ >= 9 or clang >= 10, CMake >= 3.16,
+Python 3 for the cross-check, ~10 GB free disk on the Linux filesystem.
+
+  cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+  cmake --build build -j
+  ./build/lob_tests                       # all unit + differential tests
+
+  # sanitizer build (catches memory errors / undefined behaviour in tests)
+  cmake -S . -B build-asan -DCMAKE_BUILD_TYPE=Debug -DLOB_SANITIZE=ON
+  cmake --build build-asan -j && ./build-asan/lob_tests
+
+  scripts/get_data.sh                     # ~3.5 GB download, ~8 GB raw
+  ./build/itch_replay ~/itch-data/12302019.NASDAQ_ITCH50 --prefault
+  ./build/itch_replay ~/itch-data/12302019.NASDAQ_ITCH50 --prefault --latency
+  ./build/itch_replay ~/itch-data/12302019.NASDAQ_ITCH50 --verify
+  ./build/engine_bench 20000000
+  scripts/run_full_day.sh                 # everything, saved to results/
+
+  You can stream the .gz without unpacking it to disk:
+  gunzip -c 12302019.NASDAQ_ITCH50.gz | ./build/itch_replay -
+
+Useful replay flags: --symbols AAPL,MSFT (whose top of book to print),
+--checkpoint-min N, --tob-csv file, --window N, --max-orders N,
+--mix-hash and --no-prefetch (switch optimisations off to measure them).
+
+
+-------------------------------------------------------------------------------
+3. BACKGROUND: ORDER BOOKS, MATCHING, AND MARKET DATA
+-------------------------------------------------------------------------------
+LIMIT ORDER BOOK. The list of all resting buy orders (bids) and sell orders
+(asks) for one instrument. Orders at the same price form a PRICE LEVEL. The
+highest bid and lowest ask are the BEST BID/OFFER (BBO), also called TOP OF BOOK
+or "the touch". Ask minus bid is the SPREAD. Everything behind the touch is
+DEPTH.
+
+PRICE-TIME PRIORITY (FIFO). An incoming order trades first against the best
+price. Among orders at the same price, the earliest one fills first. This rewards
+showing a good price early. Most equity exchanges, including NASDAQ, use it.
+(Some futures markets use PRO-RATA, splitting fills by size.) The data-structure
+consequence: each level must be a FIFO queue, and you must be able to remove
+from the middle of it (cancels), so you use a doubly linked list.
+
+MAKER and TAKER. A resting order "makes" liquidity; the incoming order that
+trades against it "takes" it. The trade price is always the MAKER's price. If
+the best ask is 100 and someone sends "buy at 105", they pay 100, and the 5 is
+price improvement for them.
+
+ORDER TYPES IMPLEMENTED
+  Limit (GTC, "good till cancelled"): trade what crosses, rest the remainder.
+  Market: trade at any price against whatever is there; never rests; any
+          unfilled remainder is cancelled (our market orders behave as IOC).
+  IOC (immediate or cancel): limit price, trade what you can now, cancel the
+          rest; never rests.
+  Cancel: remove a resting order by ID.
+  Modify: change price and/or quantity. Exchange convention, implemented here:
+     - same price and quantity DOWN  -> amend in place, KEEP time priority;
+     - price change or quantity UP   -> cancel/replace, LOSE priority, and the
+       new price may trade immediately if it crosses.
+     Why: if raising your size kept your place in the queue, you could sit at
+     the front with 100 shares and then jump to 100,000.
+  Not implemented (good extensions): FOK (fill-or-kill), post-only, iceberg,
+  stop orders, self-trade prevention.
+
+MARKET DATA vs ORDER ENTRY. An exchange has an ORDER-ENTRY protocol (NASDAQ's
+is OUCH) where traders send orders, a MATCHING ENGINE that matches them, and a
+MARKET-DATA feed (NASDAQ's is ITCH) that broadcasts what happened. ITCH tells
+you the CONSEQUENCES of matching: "order 123 added", "order 123 executed for
+100 shares", "order 123 deleted". So:
+  * the matching engine (OrderBook::submit/limit/market/ioc/modify) is what an
+    exchange runs;
+  * ITCH replay (BookBuilder) is what a trading firm runs: it rebuilds the
+    exchange's book from the feed and NEVER matches, because NASDAQ already did.
+This project does both with the same book data structure. Interviewers like it
+when you can explain this distinction clearly.
+
+FULL-DEPTH vs TOP-OF-BOOK FEEDS. ITCH is "market by order" (every order is
+visible with its own ID; you must rebuild levels yourself). Other feeds are
+"market by price" (aggregated levels) or top-of-book only. Market by order is
+the most information and the most work, which is why it is the classic test.
+
+
+-------------------------------------------------------------------------------
+4. THE ITCH 5.0 PROTOCOL
+-------------------------------------------------------------------------------
+Spec: "NASDAQ TotalView-ITCH 5.0" PDF (search the name; it is on nasdaqtrader).
+Sample data: https://emi.nasdaq.com/ITCH/Nasdaq%20ITCH/  (we used 12302019).
+
+FILE FRAMING. The sample files are a sequence of
+     [2-byte big-endian length][message bytes]
+There is no other delimiter. To find message N you must walk all N-1 lengths.
+(Live ITCH arrives inside MoldUDP64 packets; the files strip that layer.)
+
+COMMON HEADER (first 11 bytes of every message)
+   offset 0  type          1 byte, an ASCII letter
+   offset 1  stock locate  2 bytes: small integer ID for the instrument TODAY
+   offset 3  tracking no.  2 bytes (NASDAQ internal)
+   offset 5  timestamp     6 bytes: nanoseconds since midnight (48-bit!)
+
+ENCODING. Big-endian integers (x86 is little-endian, so byte-swap; we use
+__builtin_bswap). Prices are 4-byte unsigned integers with 4 implied decimals:
+1500000 means $150.0000. Stock symbols are 8 ASCII chars padded with spaces.
+
+MESSAGES THAT CHANGE THE BOOK
+  A  Add Order                 36 bytes  ref, side B/S, shares, stock, price
+  F  Add Order w/ attribution  40 bytes  same + 4-byte market-maker ID (MPID)
+  E  Order Executed            31 bytes  ref, executed shares, match number
+  C  Order Executed w/ Price   36 bytes  as E + printable flag + execution price
+  X  Order Cancel              23 bytes  ref, cancelled shares (PARTIAL cancel)
+  D  Order Delete              19 bytes  ref (remove whatever is left)
+  U  Order Replace             35 bytes  old ref, NEW ref, shares, price
+
+MESSAGES WE READ FOR CONTEXT
+  S  System Event (12)   'O' start of messages, 'S' start of system hours,
+                         'Q' start of market hours (09:30), 'M' end of market
+                         hours (16:00), 'E' end of system hours, 'C' end.
+  R  Stock Directory (39) maps locate -> symbol; sent before the open.
+  H  Trading Action (25)  'T' trading, 'H' halted, 'P' paused, 'Q' quote-only.
+
+MESSAGES THAT DO NOT TOUCH THE BOOK (decoded and ignored)
+  P  Trade (non-cross): executions against HIDDEN orders. They are not in the
+     book, so P must not change it. Classic bug: subtracting P from the book.
+  Q  Cross Trade: the opening/closing/halt cross print.
+  B  Broken Trade, I  NOII (auction imbalance), N  RPII,
+  Y  Reg SHO, L  Market Participant Position, V/W  circuit breakers,
+  K  IPO, J  LULD collar, h  operational halt.
+
+KEY SEMANTICS (where bugs come from)
+  * Order reference numbers are unique for the whole DAY across ALL stocks.
+    So one global ID index serves every book.
+  * U (replace) = delete old ref + add NEW ref with the same side and stock, at
+    the new price/size, and it LOSES time priority. The side is not in the U
+    message; you must remember it from the original order.
+  * X is a partial cancel (reduce by N shares); D removes the order entirely.
+  * C executes at a price that can differ from the order's price (crosses,
+    price improvement). The order's resting price does not change.
+  * Before the open (and during halts) the book can be legitimately CROSSED
+    (bid >= ask): orders accumulate for the opening cross instead of matching.
+    So "is the book crossed?" is only a valid check in continuous trading.
+  * The stock locate in E/X/D/U messages should equal the order's stock. We
+    count mismatches as a sanity check (there were zero).
+
+
+-------------------------------------------------------------------------------
+5. DESIGN DECISIONS, WITH THE REASON FOR EACH
+-------------------------------------------------------------------------------
+5.1  NO ALLOCATION AFTER STARTUP: PREALLOCATED POOLS (pool.hpp, arena.hpp)
+  What: all Orders and PriceLevels come from fixed arrays reserved once with
+  mmap. Allocation pops a LIFO free list (or bumps a counter). Freeing pushes.
+  Why:  malloc/new costs tens to hundreds of ns, takes locks, has unpredictable
+        worst cases, fragments memory, and scatters related objects. A pool is
+        a couple of instructions and keeps objects dense. LIFO reuse hands back
+        the most recently freed slot, which is probably still in cache.
+  Handles not pointers: a 4-byte index instead of an 8-byte pointer keeps
+        Order at exactly 32 bytes (two per 64-byte cache line), and "0 = null"
+        is free to check.
+  mmap with MAP_NORESERVE: reserving 1 GB costs nothing until pages are touched
+        (Linux maps zero pages lazily). --prefault touches every page at startup
+        so the hot path never page-faults. Measured: 5.8M -> 8.2M msg/s on the
+        partial day, because first-touch page faults are expensive (worse under
+        WSL2 virtualisation).
+  MADV_HUGEPAGE: 2 MB pages instead of 4 KB mean far fewer TLB misses for
+        random access over hundreds of MB.
+  Exhaustion: if a pool is full, the order is rejected (reported), never UB.
+
+5.2  O(1) CANCEL: INTRUSIVE DOUBLY LINKED LIST + ID INDEX
+  Each Order holds prev/next handles (the list lives INSIDE the objects, hence
+  "intrusive"; no separate node allocations) and the handle of its PriceLevel.
+  Cancel = hash lookup -> unlink (4 pointer writes) -> update the level's
+  count/total -> if the level is empty, remove it. No search anywhere.
+  Storing `level` in the order means we never search for the level by price.
+
+5.3  THE ID INDEX: OPEN-ADDRESSING HASH TABLE (order_id_map.hpp)
+  Why not std::unordered_map: it allocates a node per insert (malloc on the hot
+  path), chases a pointer per lookup, and rehashes (a huge pause) as it grows.
+  Our table:
+    * a flat array of 4-byte handles, power-of-two size, at least 2x the pool,
+      so the load factor stays <= 0.5 and probe sequences stay short;
+    * the KEY IS NOT STORED: we compare pool[handle].id. That makes the table
+      4x smaller (better cache hit rate), and on a hit the order is the very
+      memory we were about to read anyway;
+    * linear probing (the next slot is usually in the same cache line);
+    * backward-shift deletion instead of tombstones. Tombstones accumulate over
+      a day of churn and make lookups slower and slower; backward shift keeps
+      the table as if the deleted key had never been inserted.
+  Why not a direct array indexed by order ID? ITCH refs go into the hundreds of
+  millions over a day; a 4-byte slot per possible ref is GBs. The hash table
+  only needs to cover LIVE orders (a few million at peak).
+  Hash function: two modes.
+    Mix (default): Fibonacci hashing (multiply by 2^64/phi, keep top bits).
+    Identity (ITCH): slot = ref mod capacity. ITCH refs are assigned
+      sequentially, so orders added at nearly the same time sit in adjacent
+      slots (same cache lines), and short-lived orders are deleted while their
+      slot is still hot. Measured +18% throughput. It would be a disaster with
+      adversarial IDs (all multiples of 2^20 collide), hence opt-in.
+  Lesson measured in engine_bench: the id-table size alone moves throughput
+  from 4.4M ops/s (33.6 MB table) to 9.7M ops/s (1 MB table). Fitting in
+  cache matters more than big-O.
+
+5.4  PRICE LEVELS IN A FLAT ARRAY (order_book.hpp: TickRule, Ladder)
+  Spec requirement: "levels in a flat array indexed by tick offset from a
+  reference price, rather than a std::map".
+  Why not std::map: a red-black tree is O(log n) with a pointer chase (likely a
+  cache miss) per level, and it allocates a node for every new level. The flat
+  array finds a level with one subtraction and one load.
+  TICK KEYS. Converting price -> array index needs a tick size. US equities
+  (Reg NMS Rule 612) quote in $0.0001 below $1.00 and $0.01 from $1.00 up. In
+  ITCH units (1/10000 dollar) that is "step 1 below 10000, step 100 above".
+  TickRule maps price -> dense key: key = p for p < 10000, else
+  10000 + (p - 10000)/100. A $150 stock gets key 24,900 instead of 1,500,000,
+  so the array can be ~100x smaller. Division by a runtime constant is done
+  with a precomputed multiply-high (exact for every 32-bit input; tested).
+  WHY A WINDOW, NOT THE WHOLE PRICE RANGE. ITCH prices go up to $199,999.99.
+  Even in key space that is ~2M slots x 2 sides x ~8,900 stocks x 4 bytes =
+  ~140 GB. Impossible. So each side gets a WINDOW of W slots (default 16,384 =
+  +/- $81.92 around the anchor for >$1 stocks), and:
+    * the window is ANCHORED on the book's first order;
+    * prices outside the window, or off the tick grid (rare sub-penny prices
+      above $1), go to a small sorted vector, the OVERFLOW;
+    * when a side's best level ends up in the overflow and both touches fit in
+      half a window, the window RE-CENTERS on the touch. rebase() moves every
+      level to its new slot in O(levels + W/64); handles never change, so
+      nothing else needs fixing. If the spread is wider than half a window
+      (illiquid book) we leave it, to avoid chasing one side then the other.
+  Measured on the partial day: anchoring only put 986k levels in the overflow;
+  with re-centering, 75k (W=16384) or 18k (W=65536). Throughput was the same
+  for all window sizes. Memory: the window arena is ~2.2 GB of VIRTUAL space,
+  but only pages near each touch are ever committed (RSS ~550 MB without
+  prefault).
+  Remaining allocation: an overflow vector can grow past its reserved
+  capacity. The tool counts and reports this. Making it a fixed-size array per
+  book would remove it.
+
+5.5  FINDING THE NEXT BEST LEVEL: TWO-LEVEL BITMAP (bitset.hpp)
+  When the best level empties, you need the next non-empty one. Scanning the
+  slot array could cost thousands of loads. Instead: bit i = slot i non-empty
+  (level 0), plus one bit per level-0 word (level 1). Next set bit = mask +
+  count-leading/trailing-zeros (1 instruction each) on at most two words, plus
+  a short level-1 scan. The best level is CACHED per side, so top-of-book reads
+  are one load; the search only runs when the best level empties.
+
+5.6  MATCHING (OrderBook::match)
+  Walk the opposite side from the cached best level; within a level, walk the
+  FIFO from the head; fill min(remaining, maker qty) at the maker's price; free
+  filled makers; when a level empties, remove it (which recomputes best); stop
+  when the incoming order is filled or the next level no longer crosses its
+  limit. Market orders skip the price check. The remainder rests (GTC limit) or
+  is cancelled (IOC/market). Trades are reported through a Listener template
+  parameter: a direct, inlinable call, no virtual dispatch and no std::function
+  allocation. The listener must not modify the book from inside the callback
+  (re-entrancy would corrupt the walk).
+
+5.7  ZERO-COPY, COMPILE-TIME-DISPATCHED ITCH DECODING (itch.hpp)
+  Fields are read straight from the input buffer (memcpy + bswap, which compiles
+  to a single MOVBE/BSWAP) with no intermediate message objects. Dispatch is a
+  switch on the type byte calling handler methods resolved at compile time
+  (template parameter), so they inline. Each message length is checked against
+  the spec table, so a framing bug is caught at once rather than silently
+  misparsing everything after it.
+
+5.8  SOFTWARE PREFETCH PIPELINE (book_builder.hpp, replay.cpp)
+  An execute/cancel/delete costs a chain of DEPENDENT cache misses: hash slot ->
+  order -> price level. Each is ~80-100 ns from DRAM and cannot start until the
+  previous one finishes. But messages arrive in a buffer, so we can see the
+  future: three lookahead cursors run 16, 8 and 4 messages ahead and prefetch
+  that message's hash slot, then its order, then its level. By the time a
+  message is processed, its memory is already in cache. Measured +20%
+  (5.6-6.0 -> 6.8-7.0M msg/s). Production feed handlers do exactly this.
+
+5.9  I/O SEPARATED FROM PROCESSING
+  The file (~8 GB) is bigger than this machine's RAM, so it is read in 64 MB
+  chunks into ONE buffer allocated at startup. A message split across chunks is
+  moved to the front and completed by the next read. Throughput counts only
+  processing time; read time is reported separately. That is the honest number
+  for "how fast is the book", independent of disk speed.
+
+
+-------------------------------------------------------------------------------
+6. HOW CORRECTNESS WAS PROVEN (several independent lines of evidence)
+-------------------------------------------------------------------------------
+"It runs fast" is worthless if the book is wrong. Interviewers will ask how you
+know it is right. Each check catches different bug classes:
+
+ 1. UNIT TESTS (tests/test_main.cpp): FIFO priority, partial fills, multi-level
+    sweeps, trade-at-maker-price, IOC remainder cancel, market sweep, cancel in
+    the middle of a queue, modify keeping/losing priority, crossing modify,
+    duplicate ID, zero qty, off-tick price, pool exhaustion, overflow and
+    re-centering, tick-rule exactness, bitmap vs brute force, hash map vs
+    std::unordered_map, histogram percentiles, ITCH decoding including partial
+    trailing messages and wrong lengths.
+ 2. DIFFERENTIAL RANDOM TESTING: 1M random operations (limit/IOC/market/
+    cancel/modify, drifting mid, far-away prices) run through BOTH the fast
+    book and a deliberately naive std::map + std::list engine. After every
+    operation: identical trades (taker, maker, price, qty), identical results,
+    identical full depth. check_invariants() every 97 ops. Four
+    configurations, including a 64-slot window so overflow and re-centering
+    happen constantly, coarse ticks, and the $1 tick boundary.
+ 3. SANITIZERS: the tests also pass under AddressSanitizer + UBSan.
+ 4. FULL-DAY REFERENCE COMPARISON (--verify): an independent std::map reference
+    book runs alongside the fast one on real data. Top of book is compared
+    after EVERY book-changing message, full depth of every book at every
+    checkpoint, and check_invariants() on every book (list links, counts,
+    totals, bitmap vs slots, cached best, id-map consistency).
+ 5. EXCHANGE-CONSISTENCY CHECKS (always on). These check against NASDAQ itself,
+    not against my own code:
+      * zero unknown order refs, zero over-executions, zero locate mismatches.
+        Any parsing, framing, or replace bug makes these explode quickly;
+      * every 'E' execution during continuous trading (for a stock in state
+        'T') must be of an order at the BEST level of its side, because NASDAQ
+        fills price-first. 100% did;
+      * no two-sided book is crossed or locked at checkpoints during
+        continuous trading.
+ 6. INDEPENDENT IMPLEMENTATION: tools/itch_tob.py parses ITCH from the spec in
+    Python (no shared code) and prints AAPL top of book at the same
+    checkpoints. Diffed against the C++ CSV: identical.
+ 7. SANITY AGAINST REALITY: AAPL on 2019-12-30 traded around $289-$291; the
+    rebuilt book shows bid/ask 289.53/289.74 at the open. If your prices are
+    off by 100x, you have mis-scaled the 4 implied decimals.
+
+
+-------------------------------------------------------------------------------
+7. RESULTS (full day 2019-12-30; see results/ for raw output)
+-------------------------------------------------------------------------------
+Machine: an Intel Core i5-14500HX under WSL2 (Linux 6.6), one core pinned with taskset, TSC
+2.8 GHz, 7 GB RAM. Data: NASDAQ TotalView-ITCH 5.0, 2019-12-30, 8.25 GB,
+268,744,780 messages, 8,906 instruments. Raw output is in results/.
+
+Book size during the day
+  peak live orders            1,924,078   (pool capacity 16,777,216)
+  peak price levels             784,060   (pool capacity 4,194,304)
+  live orders at end of day           0   (every order that was added was removed)
+  overflow levels created       229,512   (window 16,384 slots/side, 1,117 re-centers)
+  overflow vector reallocations      93   (across 8,906 books; the only
+                                           allocations after startup)
+  RSS with --prefault           ~3.0 GB   (~1.0 GB in --verify without prefault)
+
+Throughput (book processing only, no per-message timers, --prefault)
+  3 runs: 6.72, 6.68, 6.74 M msg/s  -> median 6.72 M msg/s (~149 ns/message)
+  whole day processed in ~40 s; reading the 8.25 GB file took another ~17 s.
+
+Per-message latency (--latency; ns; includes ~12 ns of rdtsc overhead)
+                          count     p50    p90    p99   p99.9  p99.99
+  all messages      268,744,780      56    220    668   1,290  24,475
+  regular hours     259,224,060      56    226    668   1,267  23,196
+  outside 9:30-16     9,520,720      49    203    788  11,872 159,269
+  A add             117,145,568      45    214    714   1,381  26,667
+  F add (MPID)        1,485,888      66    382  1,267  23,196 473,423
+  E execute           5,722,824      71    283    656   1,267  22,466
+  X cancel            2,787,676      35     66    158     345   2,968
+  D delete          114,360,997      62    197    577   1,085  18,813
+  U replace          21,639,067     116    357    788   1,758  28,128
+  The p99.99 tail (tens of us) and the max (ms) are dominated by the OS: WSL
+  timer interrupts and page faults, not by the book code. The p50 to p99.9
+  range is the code.
+
+Correctness (all on the full day)
+  unit + differential tests                             ALL TESTS PASSED
+  top-of-book comparisons vs reference book   263,241,937   0 mismatches
+  full-depth comparisons (every book, every checkpoint) 311,710   0 mismatches
+  invariant check failures                                        0
+  unknown refs / over-executions / locate mismatches / bad msgs    0 / 0 / 0 / 0
+  continuous-trading executions at our top of book  5,683,178 / 5,683,178 (100%)
+  crossed/locked books at checkpoints            0 of 115,504 observations
+  Python AAPL cross-check                        identical at all 35 checkpoints
+  --verify run time: 5 min 25 s
+
+Matching-engine microbenchmark (engine_bench, 20M synthetic ops, seed 1)
+  4.0 M ops/s;  p50: all 66 ns, cancel 38, limit 118, IOC 121, market 173,
+  modify 208 ns;  p99 all 485 ns;  invariants OK at the end.
+  (This varied between ~4 and ~5.4 M ops/s across runs on WSL.)
+
+
+-------------------------------------------------------------------------------
+8. MEASURING PERFORMANCE WITHOUT FOOLING YOURSELF
+-------------------------------------------------------------------------------
+* THROUGHPUT and LATENCY are different questions. Throughput = messages/second
+  over the whole run (measured without per-message timers). Latency = how long
+  each message took, reported as a DISTRIBUTION (percentiles), because in
+  trading the tail (p99, p99.9) matters more than the mean.
+* rdtsc reads the CPU timestamp counter in ~10-20 ns. With constant_tsc /
+  nonstop_tsc (check /proc/cpuinfo) it ticks at a fixed rate, so we calibrate
+  ticks/ns once against the steady clock. The timer's own overhead is printed
+  next to the results; subtract it mentally from small numbers.
+* Log-linear histogram (HdrHistogram idea): constant memory, O(1) record, about
+  3% resolution. Never store every sample in a std::vector inside a timed loop:
+  it allocates and pollutes the cache.
+* Exclude file I/O, printing, and checkpoints from the timed region.
+* Prefault memory, or the first touch of each page (a page fault, microseconds)
+  pollutes the numbers. Then pin to a core (taskset -c N) to avoid migrations.
+* Always benchmark Release builds (-O3 -march=native). Debug is 10x slower.
+* Make sure the optimiser cannot delete the work (results must be used: here
+  they flow into the book and the counters).
+* WSL2 CAVEATS (this machine). Timer interrupts and hypervisor exits cost tens
+  of microseconds, so they show up at p99.99 (~1 in 4,000 operations at
+  ~250 ns/op = a 1 kHz tick). The Windows host can also trim idle guest
+  memory. perf has no hardware counters under WSL (software sampling only).
+  On bare-metal Linux with isolcpus/nohz_full, mlock, and huge pages the far
+  tail shrinks dramatically. Say this in interviews; it shows you understand
+  where tails come from.
+* COLD-BOOK EFFECT. In pre-market bursts (07:42, 08:30) market makers seed
+  quotes in thousands of untouched books. Each such message touches cold memory
+  (book object, window pages, bitmap): several cache and TLB misses, so 10-50 us
+  under WSL. That is why the 'F' (attributed add) tail and the "outside regular
+  hours" histogram are worse than regular hours.
+* Mean vs median: one 2 ms hiccup among 1M samples moves the mean noticeably
+  but not the median. Report percentiles.
+
+
+-------------------------------------------------------------------------------
+9. PROJECT SNAGS A STUDENT WILL HIT (and how this repo handles them)
+-------------------------------------------------------------------------------
+DATA AND ENVIRONMENT
+ - The files are huge (3.5-16 GB gzipped; ~2.3x larger raw). The NASDAQ server
+   can be slow (we saw ~0.5 MB/s, so 2 hours). Start the download first and
+   develop on the partial file: gunzip -c on an incomplete .gz decompresses
+   everything that has arrived.
+ - Not every day has an .md5sum (12302019 returned a 404 page; we deleted it).
+   Use `gzip -t` to test integrity; the replay's zero-unknown-refs check would
+   also expose corruption.
+ - WSL: keep data and builds on the Linux filesystem (~), not /mnt/c (much
+   slower). Don't put multi-GB data in git; it is in .gitignore.
+ - RAM: a full day does not fit in 7-8 GB of page cache; stream it in chunks.
+ - No zlib headers? Pipe through gunzip instead of linking zlib.
+
+PARSING
+ - Big-endian. Forgetting to byte-swap gives absurd sizes and prices instantly.
+ - The 2-byte length prefix; messages split across read buffers. Carry the
+   partial tail over (handled in replay.cpp; tested).
+ - 48-bit timestamps (6 bytes), not 64.
+ - Prices have 4 implied decimals. Never convert to double for book keys:
+   0.1 + 0.2 != 0.3 in floating point, and equal prices must compare equal.
+ - Don't hardcode that messages are a certain size without checking: validate
+   the length against the spec and count anomalies.
+ - New message types appear in later revisions. Treat unknown types as "count
+   and skip", not "crash".
+
+SEMANTICS
+ - U (replace) gives a NEW ref; the side comes from the old order. Lose priority.
+ - P trades are hidden-order executions: do NOT touch the book.
+ - C executes at a different price: do not move the order.
+ - X reduces; D removes. E/C/X can leave a partially filled order resting.
+ - The book can be crossed pre-open and during halts. Restrict "crossed" and
+   "execution at the touch" checks to continuous trading for stocks in 'T'.
+ - Order refs are global for the day: one ID index for all books.
+
+DATA STRUCTURES
+ - A naive flat array over the full price range is impossible (see 5.4), and
+   a window anchored at the first order fails when pre-market prices are far
+   from the day's real prices. Hence the overflow plus re-centering.
+ - Sub-$1 stocks use $0.0001 ticks. A uniform $0.01 grid silently breaks them.
+ - std::unordered_map / std::map / std::list allocate on every insert, which
+   violates "no allocation after startup" and is slow.
+ - Hash tables with tombstones slowly degrade; use backward-shift deletion.
+ - Freeing the order before erasing it from the id map: the free list
+   overwrites the first bytes (the id!). Erase first, then free.
+ - Iterator/handle invalidation when removing the level you are iterating
+   (the match loop reads the next maker before freeing the current one).
+ - Level totals can exceed 2^32 shares: use 64-bit for aggregates.
+ - Pool exhaustion must be a reported rejection, not a crash. Size pools from
+   measured peaks (peak live orders is printed) with headroom.
+
+BENCHMARKING
+ - Measuring I/O instead of the book. Page faults on first touch. Debug
+   builds. Printing in the hot loop. Unpinned threads. Mean instead of
+   percentiles. Synthetic flow that is not steady state: our first engine_bench
+   let the book grow to 1.2M orders, which measured cache misses rather than
+   the engine. Fixed by making cancels target live orders.
+
+
+-------------------------------------------------------------------------------
+10. INTERVIEW QUESTIONS, WITH CRISP ANSWERS
+-------------------------------------------------------------------------------
+Q: Why is cancel O(1)?
+A: Hash ID -> handle, the order stores its prev/next and its level handle,
+   unlink is constant time, and level removal is an array slot clear plus a
+   bitmap clear. Recomputing the best is a bit-scan, not a search.
+
+Q: Why not std::map<price, std::list<Order>>?
+A: Node allocation per insert, pointer chasing (cache misses), O(log n) level
+   lookup. The flat array is one subtraction and one load, and the bitmap gives
+   the next level in a few instructions. I kept that naive version as the test
+   oracle.
+
+Q: How do you handle prices outside the array?
+A: Tick-key mapping shrinks the range; a window per side; a sorted overflow for
+   outliers; re-centering when the touch leaves the window. Measured: only a
+   tiny fraction of levels ever live in the overflow.
+
+Q: How do you know your book is correct?
+A: Section 6: differential tests vs a naive engine; a reference book compared
+   after every real message; execution-at-touch and no-cross invariants checked
+   against NASDAQ's behaviour; an independent Python parser that agrees.
+
+Q: Where does the time go per message?
+A: Mostly cache misses: hash slot, order, level, window slot. Hence a compact
+   32-byte Order, a 4-byte-per-slot hash table, identity hashing for sequential
+   refs, LIFO reuse of hot slots, and the prefetch pipeline.
+
+Q: What would you change for a real exchange?
+A: Self-trade prevention, more order types (FOK, post-only, iceberg, stop),
+   per-participant risk checks, sequence numbers and journaling for recovery,
+   deterministic replay, auctions (opening/closing cross), and one book per
+   core with lock-free queues between network, engine and publisher.
+
+Q: Multithreading?
+A: A single book is processed sequentially. Price-time priority is a total
+   order and locks would kill latency. Scale by sharding instruments across
+   cores, each core single-threaded, fed by SPSC ring buffers.
+
+Q: What is p99 and why care?
+A: The latency 99% of messages beat. Strategies react to bursts, and bursts are
+   when tails happen, so a fast median with a bad tail loses money exactly when
+   it matters.
+
+Q: Why preallocate? Isn't malloc fast?
+A: Usually ~20-100 ns, but sometimes it takes a lock, calls mmap, or touches
+   cold memory: unbounded worst case. Pools are deterministic and dense.
+
+Q: What is false sharing / cache line? (common follow-up)
+A: A cache line is 64 bytes, the unit of transfer between memory and the CPU.
+   Two threads writing different variables in the same line keep stealing it
+   from each other (false sharing). Here: single-threaded, but layout still
+   matters: Order = 32 bytes = half a line.
+
+Q: Why identity hashing? Isn't that bad?
+A: For arbitrary keys, yes. ITCH refs are sequential, so identity gives
+   locality without collisions in practice; measured +18%. It is a flag,
+   with the mixing hash as the safe default.
+
+
+-------------------------------------------------------------------------------
+11. EXTENSIONS IF YOU WANT TO GO FURTHER
+-------------------------------------------------------------------------------
+ - Opening/closing cross (auction) logic, checked against ITCH 'Q' cross prints.
+ - Compare trades: emit E/C executions as trades and reconcile with NASDAQ's
+   volume per symbol.
+ - Market-by-price output feed (aggregated levels) and its own latency.
+ - Fixed-capacity overflow per book (removes the last possible allocation).
+ - Shard books across threads with SPSC queues; measure scaling.
+ - Read from a MoldUDP64 PCAP instead of the flat file.
+ - Tune prefetch distances; try a B-tree or other structures and compare.
+ - Run on bare-metal Linux with isolcpus and huge pages and compare the tails.
+
+
+-------------------------------------------------------------------------------
+12. GLOSSARY
+-------------------------------------------------------------------------------
+BBO / top of book / touch: best bid and best offer (ask).
+Bid / ask (offer): buy / sell interest. Spread: ask - bid.
+Level: all orders at one price on one side. Depth: levels behind the touch.
+Locked market: bid == ask. Crossed: bid > ask.
+Maker / taker: resting vs incoming side of a trade.
+GTC / IOC / FOK: good-till-cancel / immediate-or-cancel / fill-or-kill.
+Tick: minimum price increment. Reg NMS 612: the sub-penny rule.
+Stock locate: ITCH's per-day small integer ID for an instrument.
+Order reference number: ITCH's per-day unique order ID.
+MPID: market participant ID (on 'F' messages).
+Cross: an auction (opening, closing, IPO, halt) that matches at one price.
+Hidden order: not displayed; executions appear as 'P' trades.
+Handle: a 32-bit index into a pool, used instead of a pointer.
+Intrusive list: the links live inside the elements themselves.
+Open addressing / linear probing: hash collisions go to the next slot.
+Backward-shift deletion: moving later entries back instead of tombstones.
+TLB: cache of virtual-to-physical page translations; huge pages reduce misses.
+Prefetch: a hint to start loading memory before it is needed.
+rdtsc: x86 instruction that reads the CPU timestamp counter.
+p50/p99/p99.9: latency percentiles.
